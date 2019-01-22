@@ -10,28 +10,38 @@ ctrl.index = (req, res) => {
     
 }
 
-ctrl.create = async (req, res) => {
-    const imgUrl = randomName();
-    console.log(imgUrl);
-    const imageTempPath = req.file.path;
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const targetPath = path.resolve(`src/public/upload/${imgUrl}${ext}`);
+ctrl.create = (req, res) => {
 
-    if (ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.gif') {
-        await fs.rename(imageTempPath, targetPath);
-        const newImage = new Image({
-            title: req.body.title,
-            filename: imgUrl + ext,
-            description: req.body.description
-        });
-        const imageSaved = await newImage().save();
-    } else {
-        await fs.unlink(imageTempPath);
-        res.status(500).json({error: 'Only Images are allowed'})
+    const saveImage = async () => {
+        const imgUrl = randomName();
+        const images = await Image.find({ filename: imgUrl });
+        if (images.length > 0) {
+            saveImage();
+        } else {
+            console.log(imgUrl);
+            const imageTempPath = req.file.path;
+            const ext = path.extname(req.file.originalname).toLowerCase();
+            const targetPath = path.resolve(`src/public/upload/${imgUrl}${ext}`);
+
+            if (ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.gif') {
+                await fs.rename(imageTempPath, targetPath);
+                const newImg = new Image({
+                    title: req.body.title,
+                    filename: imgUrl + ext,
+                    description: req.body.description
+                });
+                const imageSaved = await newImg.save();
+                // res.redirect('/images/');
+                res.send('works');
+            } else {
+                await fs.unlink(imageTempPath);
+                res.status(500).json({ error: 'Only Images are allowed' })
+            }
+        }
     }
-
-    res.send('works!');
-}
+    saveImage();
+    
+};
 
 ctrl.like = (req, res) => {
 
